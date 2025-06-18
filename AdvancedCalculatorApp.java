@@ -38,8 +38,6 @@ public class AdvancedCalculatorApp extends JFrame implements ActionListener {
             buttonPanel.add(btn);
         }
 
-        JButton equalBtn = createButton("=");
-        equalBtn.setPreferredSize(new Dimension(0, 60));
         add(buttonPanel, BorderLayout.CENTER);
 
         setVisible(true);
@@ -76,34 +74,57 @@ public class AdvancedCalculatorApp extends JFrame implements ActionListener {
                 try {
                     double val = Double.parseDouble(display.getText());
                     val *= -1;
-                    display.setText(String.valueOf(val));
+                    display.setText(formatResult(val));
+                    expression.setLength(0);
+                    expression.append(display.getText());
                 } catch (NumberFormatException ignored) {}
                 break;
             case "%":
                 try {
                     double val = Double.parseDouble(display.getText());
                     val /= 100;
-                    display.setText(String.valueOf(val));
+                    display.setText(formatResult(val));
+                    expression.setLength(0);
+                    expression.append(display.getText());
                 } catch (NumberFormatException ignored) {}
                 break;
             case "=":
                 try {
+                    if (expression.length() == 0) break;
+
                     double result = evaluate(expression.toString());
-                    display.setText(String.valueOf(result));
+                    display.setText(formatResult(result));
                     expression.setLength(0);
+                    expression.append(display.getText());
                 } catch (Exception ex) {
                     display.setText("Error");
                     expression.setLength(0);
                 }
                 break;
             default:
-                expression.append(cmd);
+                if (!expression.isEmpty() && isOperator(cmd.charAt(0)) && isOperator(expression.charAt(expression.length() - 1))) {
+                    // Replace last operator with new one
+                    expression.setCharAt(expression.length() - 1, cmd.charAt(0));
+                } else {
+                    expression.append(cmd);
+                }
                 display.setText(expression.toString());
         }
     }
 
+    private boolean isOperator(char ch) {
+        return ch == '+' || ch == '-' || ch == '*' || ch == '/';
+    }
+
+    private String formatResult(double result) {
+        if (result == (long) result) {
+            return String.valueOf((long) result);
+        } else {
+            return String.valueOf(result);
+        }
+    }
+
     private double evaluate(String expr) {
-        // Simple expression evaluator using two stacks (Shunting Yard Algorithm is better for complex use)
         Stack<Double> numbers = new Stack<>();
         Stack<Character> operations = new Stack<>();
         int i = 0;
@@ -144,7 +165,7 @@ public class AdvancedCalculatorApp extends JFrame implements ActionListener {
             case '+' -> a + b;
             case '-' -> a - b;
             case '*' -> a * b;
-            case '/' -> b != 0 ? a / b : 0;
+            case '/' -> b != 0 ? a / b : Double.NaN;
             default -> 0;
         };
     }
